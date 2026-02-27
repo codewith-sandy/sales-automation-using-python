@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin - Sales Automation SaaS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body class="bg-gray-100">
+<div class="interactive-bg">
+    <div class="blob one"></div>
+    <div class="blob two"></div>
+    <div class="blob three"></div>
+    <div class="cursor-glow"></div>
+</div>
+
+<div class="flex h-screen page-shell">
+    <aside class="w-64 sidebar-glass">
+        <div class="p-6 text-2xl font-bold border-b brand-badge">
+            🚀 AutoSales
+        </div>
+
+        <nav class="p-4 space-y-2">
+            <a href="/" data-loading="Loading dashboard..." class="nav-link">Dashboard</a>
+            <a href="/reports" data-loading="Loading reports..." class="nav-link">Reports</a>
+            <a href="/analytics" data-loading="Loading analytics..." class="nav-link">Analytics</a>
+            <a href="/settings" data-loading="Loading settings..." class="nav-link">Settings</a>
+            <a href="/admin" data-loading="Loading admin page..." class="nav-link nav-link-active">Admin</a>
+        </nav>
+    </aside>
+
+    <main class="flex-1 p-8 overflow-y-auto">
+        <div class="flex justify-between items-center mb-8 topbar-glass rounded-2xl px-5 py-4">
+            <h1 class="text-3xl font-bold">Admin</h1>
+            <a href="/settings" data-loading="Loading settings..." class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition">Go to Settings</a>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-white p-6 rounded-2xl shadow md:col-span-2">
+                <h2 class="text-xl font-semibold mb-4">Admin Profile</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-700">
+                    <div>
+                        <p class="text-gray-500">Name</p>
+                        <p class="font-semibold">{{ name }}</p>
+                    </div>
+                    <div>
+                        <p class="text-gray-500">Role</p>
+                        <p class="font-semibold">{{ role }}</p>
+                    </div>
+                    <div>
+                        <p class="text-gray-500">Email</p>
+                        <p class="font-semibold">{{ email }}</p>
+                    </div>
+                    <div>
+                        <p class="text-gray-500">Status</p>
+                        <p class="font-semibold text-green-600">{{ status }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-2xl shadow">
+                <h2 class="text-xl font-semibold mb-4">Activity</h2>
+                <p class="text-sm text-gray-500">Last Login</p>
+                <p class="font-semibold">{{ last_login.strftime('%Y-%m-%d %H:%M:%S') }}</p>
+                <p class="text-sm text-gray-500 mt-4">Managed Reports</p>
+                <p class="text-2xl font-bold">{{ managed_reports }}</p>
+            </div>
+        </div>
+
+        <div class="bg-white p-6 rounded-2xl shadow">
+            <h2 class="text-xl font-semibold mb-3">System Notes</h2>
+            {% if latest_activity %}
+            <p class="text-sm text-gray-700">Latest report activity: <span class="font-semibold">{{ latest_activity.strftime('%Y-%m-%d %H:%M:%S') }}</span></p>
+            {% else %}
+            <p class="text-sm text-gray-700">No report activity available yet.</p>
+            {% endif %}
+            <p class="text-sm text-gray-500 mt-2">This page shows basic admin details for monitoring and quick reference.</p>
+        </div>
+    </main>
+</div>
+
+<div id="loadingOverlay" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-50">
+    <div class="bg-white rounded-2xl shadow-xl p-6 min-w-[280px] text-center">
+        <div class="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto"></div>
+        <p id="loadingText" class="mt-4 text-gray-700 font-medium">Loading...</p>
+    </div>
+</div>
+</body>
+<script src="{{ url_for('static', filename='interactive-bg.js') }}"></script>
+<script>
+const loadingOverlay = document.getElementById('loadingOverlay');
+const loadingText = document.getElementById('loadingText');
+
+function showLoading(message) {
+    if (!loadingOverlay || !loadingText) {
+        return;
+    }
+    loadingText.textContent = message || 'Loading...';
+    loadingOverlay.classList.remove('hidden');
+    loadingOverlay.classList.add('flex');
+}
+
+document.querySelectorAll('a[data-loading]').forEach((link) => {
+    link.addEventListener('click', () => {
+        showLoading(link.dataset.loading || 'Loading...');
+    });
+});
+</script>
+</html>

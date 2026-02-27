@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Settings - Sales Automation SaaS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body class="bg-gray-100">
+<div class="interactive-bg">
+    <div class="blob one"></div>
+    <div class="blob two"></div>
+    <div class="blob three"></div>
+    <div class="cursor-glow"></div>
+</div>
+
+<div class="flex h-screen page-shell">
+    <aside class="w-64 sidebar-glass">
+        <div class="p-6 text-2xl font-bold border-b brand-badge">
+            🚀 AutoSales
+        </div>
+
+        <nav class="p-4 space-y-2">
+            <a href="/" data-loading="Loading dashboard..." class="nav-link">Dashboard</a>
+            <a href="/reports" data-loading="Loading reports..." class="nav-link">Reports</a>
+            <a href="/analytics" data-loading="Loading analytics..." class="nav-link">Analytics</a>
+            <a href="/settings" data-loading="Loading settings..." class="nav-link nav-link-active">Settings</a>
+            <a href="/admin" data-loading="Loading admin page..." class="nav-link">Admin</a>
+        </nav>
+    </aside>
+
+    <main class="flex-1 p-8 overflow-y-auto">
+        <div class="flex justify-between items-center mb-8 topbar-glass rounded-2xl px-5 py-4">
+            <h1 class="text-3xl font-bold">Settings</h1>
+            <a href="/" data-loading="Loading dashboard..." class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">Back to Dashboard</a>
+        </div>
+
+        {% if success %}
+        <div class="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-xl mb-6">
+            {{ success }}
+        </div>
+        {% endif %}
+
+        {% if error %}
+        <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-6">
+            {{ error }}
+        </div>
+        {% endif %}
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-white p-6 rounded-2xl shadow">
+                <p class="text-gray-500">Application</p>
+                <h3 class="text-2xl font-bold mt-2">{{ app_name }}</h3>
+                <p class="text-sm text-gray-500 mt-1">Version {{ app_version }}</p>
+            </div>
+            <div class="bg-white p-6 rounded-2xl shadow">
+                <p class="text-gray-500">Environment</p>
+                <h3 class="text-2xl font-bold mt-2">{{ environment }}</h3>
+            </div>
+            <div class="bg-white p-6 rounded-2xl shadow">
+                <p class="text-gray-500">Total Reports</p>
+                <h3 class="text-2xl font-bold mt-2">{{ total_reports }}</h3>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <div class="bg-white p-6 rounded-2xl shadow">
+                <h2 class="text-xl font-semibold mb-4">Edit Storage Paths</h2>
+                <form method="POST" data-loading-text="Updating storage settings..." class="space-y-4">
+                    <div>
+                        <label class="block text-sm text-gray-600 mb-1">Upload Folder</label>
+                        <div class="flex items-center border rounded-lg overflow-hidden bg-white">
+                            <button type="button" data-target-input="upload_folder" class="browse-path-btn bg-slate-100 px-4 py-3 border-r hover:bg-slate-200 text-sm font-medium shrink-0">Choose folder</button>
+                            <input id="upload_folder" type="text" name="upload_folder" value="{{ upload_folder }}" required class="flex-1 px-3 py-3 border-0 outline-none text-sm text-gray-700 bg-transparent" placeholder="No folder selected">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-600 mb-1">Output Folder</label>
+                        <div class="flex items-center border rounded-lg overflow-hidden bg-white">
+                            <button type="button" data-target-input="output_folder" class="browse-path-btn bg-slate-100 px-4 py-3 border-r hover:bg-slate-200 text-sm font-medium shrink-0">Choose folder</button>
+                            <input id="output_folder" type="text" name="output_folder" value="{{ output_folder }}" required class="flex-1 px-3 py-3 border-0 outline-none text-sm text-gray-700 bg-transparent" placeholder="No folder selected">
+                        </div>
+                    </div>
+                    <button type="submit" class="bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700 transition">
+                        Save Storage Paths
+                    </button>
+                </form>
+            </div>
+
+            <div class="bg-white p-6 rounded-2xl shadow">
+                <h2 class="text-xl font-semibold mb-4">Report Summary</h2>
+                <div class="space-y-2 text-sm text-gray-700">
+                    <p>Excel Reports: <span class="font-semibold">{{ excel_count }}</span></p>
+                    <p>PDF Reports: <span class="font-semibold">{{ pdf_count }}</span></p>
+                    <p>Uploaded Files: <span class="font-semibold">{{ upload_files_count }}</span></p>
+                </div>
+                {% if latest_report %}
+                <div class="mt-4 p-3 bg-gray-50 rounded-lg text-sm">
+                    <p class="text-gray-600">Latest Report</p>
+                    <p class="font-medium">{{ latest_report.name }}</p>
+                    <p class="text-gray-500">{{ latest_report.updated_at.strftime('%Y-%m-%d %H:%M:%S') }}</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </main>
+</div>
+
+<div id="loadingOverlay" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-50">
+    <div class="bg-white rounded-2xl shadow-xl p-6 min-w-[280px] text-center">
+        <div class="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto"></div>
+        <p id="loadingText" class="mt-4 text-gray-700 font-medium">Loading...</p>
+    </div>
+</div>
+
+<div id="pathPickerModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50">
+    <div class="bg-white rounded-2xl shadow-2xl p-6 w-[800px] max-w-[95vw] max-h-[85vh] flex flex-col">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-xl font-bold text-gray-800">Select Folder</h3>
+            <button id="closePathPicker" type="button" class="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-sm font-medium">Close</button>
+        </div>
+        
+        <!-- Quick Access Shortcuts -->
+        <div class="flex flex-wrap gap-2 mb-4">
+            <button type="button" class="quick-access-btn flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg hover:from-blue-100 hover:to-indigo-100 transition text-sm" data-path="project">
+                <span>📁</span>
+                <span>Project Folder</span>
+            </button>
+            <button type="button" class="quick-access-btn flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg hover:from-green-100 hover:to-emerald-100 transition text-sm" data-path="desktop">
+                <span>🖥️</span>
+                <span>Desktop</span>
+            </button>
+            <button type="button" class="quick-access-btn flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-50 to-yellow-50 border border-amber-200 rounded-lg hover:from-amber-100 hover:to-yellow-100 transition text-sm" data-path="documents">
+                <span>📄</span>
+                <span>Documents</span>
+            </button>
+            <button type="button" class="quick-access-btn flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-lg hover:from-purple-100 hover:to-pink-100 transition text-sm" data-path="downloads">
+                <span>⬇️</span>
+                <span>Downloads</span>
+            </button>
+        </div>
+        
+        <!-- Navigation Bar -->
+        <div class="flex gap-2 mb-4">
+            <button id="goParentDir" type="button" class="px-4 py-3 rounded-lg bg-slate-100 hover:bg-slate-200 font-medium flex items-center gap-1">
+                <span>⬆️</span> Up
+            </button>
+            <div class="flex-1 flex items-center bg-slate-50 border rounded-lg px-3">
+                <span class="text-slate-400 mr-2">📂</span>
+                <input id="currentDirPath" type="text" class="flex-1 bg-transparent py-3 outline-none text-sm text-gray-700" placeholder="Select a folder..." readonly>
+            </div>
+            <button id="useThisPath" type="button" class="px-6 py-3 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-medium hover:from-blue-700 hover:to-indigo-700 transition shadow-lg shadow-blue-200">
+                ✓ Use This Path
+            </button>
+        </div>
+        
+        <!-- Folder List -->
+        <div id="dirList" class="border rounded-xl p-3 overflow-y-auto flex-1 bg-gradient-to-b from-slate-50 to-white min-h-[250px]"></div>
+        <p id="pathPickerError" class="text-red-600 text-sm mt-3 hidden"></p>
+    </div>
+</div>
+</div>
+</body>
+<script src="{{ url_for('static', filename='interactive-bg.js') }}"></script>
+<script>
+const loadingOverlay = document.getElementById('loadingOverlay');
+const loadingText = document.getElementById('loadingText');
+
+function showLoading(message) {
+    if (!loadingOverlay || !loadingText) {
+        return;
+    }
+    loadingText.textContent = message || 'Loading...';
+    loadingOverlay.classList.remove('hidden');
+    loadingOverlay.classList.add('flex');
+}
+
+document.querySelectorAll('a[data-loading]').forEach((link) => {
+    link.addEventListener('click', () => {
+        showLoading(link.dataset.loading || 'Loading...');
+    });
+});
+
+document.querySelectorAll('form').forEach((form) => {
+    form.addEventListener('submit', () => {
+        showLoading(form.dataset.loadingText || 'Saving settings...');
+    });
+});
+
+const pathPickerModal = document.getElementById('pathPickerModal');
+const closePathPicker = document.getElementById('closePathPicker');
+const goParentDir = document.getElementById('goParentDir');
+const useThisPath = document.getElementById('useThisPath');
+const currentDirPath = document.getElementById('currentDirPath');
+const dirList = document.getElementById('dirList');
+const pathPickerError = document.getElementById('pathPickerError');
+const browseButtons = document.querySelectorAll('.browse-path-btn');
+
+let selectedInputId = null;
+let currentBrowsePath = '';
+let parentBrowsePath = null;
+
+function showPathPickerError(message) {
+    pathPickerError.textContent = message;
+    pathPickerError.classList.remove('hidden');
+}
+
+function clearPathPickerError() {
+    pathPickerError.textContent = '';
+    pathPickerError.classList.add('hidden');
+}
+
+function openPathPicker() {
+    pathPickerModal.classList.remove('hidden');
+    pathPickerModal.classList.add('flex');
+}
+
+function closePathPickerModal() {
+    pathPickerModal.classList.add('hidden');
+    pathPickerModal.classList.remove('flex');
+}
+
+async function loadDirectories(path = '') {
+    clearPathPickerError();
+    dirList.innerHTML = '<div class="flex items-center justify-center p-8 text-slate-400"><div class="w-6 h-6 border-2 border-slate-300 border-t-blue-500 rounded-full animate-spin mr-3"></div>Loading folders...</div>';
+
+    try {
+        const response = await fetch(`/api/list_dirs?path=${encodeURIComponent(path)}`);
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || 'Unable to load folders.');
+        }
+
+        currentBrowsePath = data.current || '';
+        parentBrowsePath = data.parent;
+        currentDirPath.value = currentBrowsePath || '(Select a drive/folder)';
+        goParentDir.disabled = !parentBrowsePath;
+        
+        if (parentBrowsePath) {
+            goParentDir.classList.remove('opacity-50', 'cursor-not-allowed');
+        } else {
+            goParentDir.classList.add('opacity-50', 'cursor-not-allowed');
+        }
+
+        if (!data.directories || data.directories.length === 0) {
+            dirList.innerHTML = '<div class="flex flex-col items-center justify-center p-8 text-slate-400"><span class="text-4xl mb-2">📂</span><p class="text-sm">No subfolders in this directory</p><p class="text-xs mt-1">You can use this folder or navigate elsewhere</p></div>';
+            return;
+        }
+
+        dirList.innerHTML = '';
+        data.directories.forEach((dirPath) => {
+            const folderName = dirPath.split(/[/\\]/).pop() || dirPath;
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'w-full text-left px-4 py-3 rounded-xl hover:bg-blue-50 hover:border-blue-200 border border-transparent flex items-center gap-3 transition group';
+            button.innerHTML = `
+                <span class="text-2xl group-hover:scale-110 transition">📁</span>
+                <div class="flex-1 min-w-0">
+                    <p class="font-medium text-gray-800 truncate">${folderName}</p>
+                    <p class="text-xs text-gray-400 truncate">${dirPath}</p>
+                </div>
+                <span class="text-gray-300 group-hover:text-blue-500 transition">→</span>
+            `;
+            button.addEventListener('click', () => loadDirectories(dirPath));
+            dirList.appendChild(button);
+        });
+    } catch (error) {
+        dirList.innerHTML = '<div class="flex flex-col items-center justify-center p-8 text-red-400"><span class="text-4xl mb-2">⚠️</span><p class="text-sm">Failed to load folders</p></div>';
+        showPathPickerError(error.message || 'Failed to load folders.');
+    }
+}
+
+browseButtons.forEach((button) => {
+    button.addEventListener('click', async () => {
+        selectedInputId = button.dataset.targetInput;
+        const input = document.getElementById(selectedInputId);
+        const startPath = input ? input.value.trim() : '';
+        openPathPicker();
+        await loadDirectories(startPath);
+    });
+});
+
+closePathPicker.addEventListener('click', closePathPickerModal);
+
+goParentDir.addEventListener('click', async () => {
+    if (parentBrowsePath) {
+        await loadDirectories(parentBrowsePath);
+    }
+});
+
+useThisPath.addEventListener('click', () => {
+    if (!selectedInputId) {
+        return;
+    }
+
+    const input = document.getElementById(selectedInputId);
+    if (input && currentBrowsePath) {
+        input.value = currentBrowsePath;
+    }
+    closePathPickerModal();
+});
+
+// Quick Access Buttons
+const quickAccessButtons = document.querySelectorAll('.quick-access-btn');
+quickAccessButtons.forEach((btn) => {
+    btn.addEventListener('click', async () => {
+        const pathType = btn.dataset.path;
+        
+        if (!pathType) {
+            // Project folder - use current working directory
+            await loadDirectories('');
+            return;
+        }
+        
+        try {
+            const response = await fetch(`/api/quick_path?type=${pathType}`);
+            const data = await response.json();
+            
+            if (data.path) {
+                await loadDirectories(data.path);
+            } else {
+                showPathPickerError('Quick access path not available.');
+            }
+        } catch (error) {
+            showPathPickerError('Failed to load quick access path.');
+        }
+    });
+});
+
+// Click outside modal to close
+pathPickerModal.addEventListener('click', (e) => {
+    if (e.target === pathPickerModal) {
+        closePathPickerModal();
+    }
+});
+</script>
+</html>

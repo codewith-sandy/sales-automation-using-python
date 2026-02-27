@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Sales Automation SaaS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body class="bg-gray-100">
+
+<div class="interactive-bg">
+    <div class="blob one"></div>
+    <div class="blob two"></div>
+    <div class="blob three"></div>
+    <div class="cursor-glow"></div>
+</div>
+
+<div class="flex h-screen page-shell">
+
+    <!-- Sidebar -->
+    <aside class="w-64 sidebar-glass">
+        <div class="p-6 text-2xl font-bold border-b brand-badge">
+            🚀 AutoSales
+        </div>
+
+        <nav class="p-4 space-y-2">
+            <a href="/" data-loading="Loading dashboard..." class="nav-link nav-link-active">Dashboard</a>
+            <a href="/reports" data-loading="Loading reports..." class="nav-link">Reports</a>
+            <a href="/analytics" data-loading="Loading analytics..." class="nav-link">Analytics</a>
+            <a href="/settings" data-loading="Loading settings..." class="nav-link">Settings</a>
+            <a href="/admin" data-loading="Loading admin page..." class="nav-link">Admin</a>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 p-8 overflow-y-auto">
+
+        <!-- Top Navbar -->
+        <div class="flex justify-between items-center mb-8 topbar-glass rounded-2xl px-5 py-4">
+            <h1 class="text-3xl font-bold">Sales Dashboard</h1>
+            <div class="flex gap-3">
+                <button id="loadChartHistoryBtn" type="button" class="bg-indigo-600 text-white px-4 py-2 rounded-lg shadow hover:bg-indigo-700 transition flex items-center gap-2">
+                    <span>📊</span> Load Old Charts
+                </button>
+                <a href="/admin" class="bg-white/90 px-4 py-2 rounded-lg shadow hover:bg-white transition">
+                    👤 Admin
+                </a>
+            </div>
+        </div>
+
+        <!-- Upload Section -->
+        <div class="section-card p-6 mb-8">
+            <h2 class="text-xl font-semibold mb-4">Upload Sales File</h2>
+            <form method="POST" enctype="multipart/form-data" data-loading-text="Reading columns..." class="flex gap-4">
+                <input type="hidden" name="action" value="read_columns">
+                <input type="file" name="file" required
+                        class="flex-1 border p-3 rounded-lg">
+                <button type="submit"
+                        class="bg-blue-600 text-white px-6 rounded-lg hover:bg-blue-700 transition">
+                    Read Columns
+                </button>
+            </form>
+            {% if error %}
+            <p class="text-red-600 mt-3">{{ error }}</p>
+            {% endif %}
+        </div>
+
+        {% if columns and file_token %}
+        <div class="section-card p-6 mb-8">
+            <h2 class="text-xl font-semibold mb-4">Select Columns For Processing</h2>
+            <div class="mb-4">
+                <p class="text-sm font-medium text-gray-700 mb-2">Available Columns ({{ columns|length }})</p>
+                <div class="flex flex-wrap gap-2">
+                    {% for col in columns %}
+                    <span class="px-3 py-1 bg-gray-100 text-gray-700 rounded-lg text-sm">{{ col }}</span>
+                    {% endfor %}
+                </div>
+                <p class="text-xs text-gray-500 mt-2">Type these names in the fields below.</p>
+            </div>
+            <form method="POST" data-loading-text="Processing file and generating reports..." class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <input type="hidden" name="action" value="process_data">
+                <input type="hidden" name="file_token" value="{{ file_token }}">
+
+                <div>
+                    <label class="block text-sm text-gray-600 mb-1">Time Mode</label>
+                    <select name="time_mode" class="w-full border p-3 rounded-lg">
+                        <option value="date" {% if selected_mode == 'date' %}selected{% endif %}>Date</option>
+                        <option value="year_month" {% if selected_mode == 'year_month' %}selected{% endif %}>Year + Month</option>
+                        <option value="year" {% if selected_mode == 'year' %}selected{% endif %}>Year</option>
+                        <option value="month" {% if selected_mode == 'month' %}selected{% endif %}>Month</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-sm text-gray-600 mb-1">Product Column</label>
+                    <input type="text" name="product_col" required class="w-full border p-3 rounded-lg"
+                           placeholder="e.g. product" value="{{ defaults.product_col if defaults else '' }}">
+                </div>
+
+                <div>
+                    <label class="block text-sm text-gray-600 mb-1">Total Column (optional)</label>
+                    <input type="text" name="total_col" class="w-full border p-3 rounded-lg"
+                           placeholder="Leave blank to compute from quantity × price" value="{{ defaults.total_col if defaults else '' }}">
+                </div>
+
+                <div>
+                    <label class="block text-sm text-gray-600 mb-1">Quantity Column (optional)</label>
+                    <input type="text" name="quantity_col" class="w-full border p-3 rounded-lg"
+                           placeholder="e.g. quantity" value="{{ defaults.quantity_col if defaults else '' }}">
+                </div>
+
+                <div>
+                    <label class="block text-sm text-gray-600 mb-1">Price Column (optional)</label>
+                    <input type="text" name="price_col" class="w-full border p-3 rounded-lg"
+                           placeholder="e.g. price" value="{{ defaults.price_col if defaults else '' }}">
+                </div>
+
+                <div>
+                    <label class="block text-sm text-gray-600 mb-1">Date Column (for Date mode)</label>
+                    <input type="text" name="date_col" class="w-full border p-3 rounded-lg"
+                           placeholder="e.g. date" value="{{ defaults.date_col if defaults else '' }}">
+                </div>
+
+                <div>
+                    <label class="block text-sm text-gray-600 mb-1">Year Column</label>
+                    <input type="text" name="year_col" class="w-full border p-3 rounded-lg"
+                           placeholder="e.g. year" value="{{ defaults.year_col if defaults else '' }}">
+                </div>
+
+                <div>
+                    <label class="block text-sm text-gray-600 mb-1">Month Column</label>
+                    <input type="text" name="month_col" class="w-full border p-3 rounded-lg"
+                           placeholder="e.g. month" value="{{ defaults.month_col if defaults else '' }}">
+                </div>
+
+                <div class="md:col-span-2">
+                    <button type="submit" class="btn-analytics px-6 py-2 rounded-lg transition">
+                        Run Processing
+                    </button>
+                </div>
+            </form>
+        </div>
+        {% endif %}
+
+        {% if revenue %}
+
+        {% if loaded_from_history %}
+        <div class="bg-indigo-50 border border-indigo-200 text-indigo-700 px-4 py-3 rounded-xl mb-6 flex items-center gap-2">
+            <span>📊</span>
+            <span>Viewing chart from history. <a href="/" class="underline font-medium">Upload new file</a> to process fresh data.</span>
+        </div>
+        {% endif %}
+
+        <!-- KPI Cards -->
+        <div class="grid grid-cols-3 gap-6 mb-8">
+            <div class="metric-card p-6">
+                <p class="metric-label">Total Revenue</p>
+                <h3 class="metric-value">₹{{ revenue }}</h3>
+            </div>
+
+            <div class="metric-card p-6">
+                <p class="metric-label">Best Product</p>
+                <h3 class="metric-value">{{ product }}</h3>
+            </div>
+
+            <div class="metric-card p-6">
+                <p class="metric-label">Status</p>
+                <h3 class="metric-value text-green-600">Processed</h3>
+            </div>
+        </div>
+
+        <!-- Chart Section -->
+        <div class="section-card p-6 mb-8">
+            <h2 class="text-xl font-semibold mb-4">Sales Charts</h2>
+            {% if used_basis %}
+            <p class="text-sm text-gray-500 mb-3">Basis used: {{ used_basis }}</p>
+            {% endif %}
+            
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <!-- Bar Chart -->
+                <div class="bg-slate-50 p-3 rounded-xl cursor-pointer hover:ring-2 hover:ring-blue-400 transition chart-tile" data-chart-type="bar">
+                    <h3 class="text-xs font-semibold text-gray-600 mb-2">Bar Chart</h3>
+                    <div class="h-36">
+                        <canvas id="barChart"
+                                class="rounded-lg"
+                                data-labels='{{ labels|tojson|safe }}'
+                                data-values='{{ values|tojson|safe }}'></canvas>
+                    </div>
+                </div>
+                
+                <!-- Line Chart -->
+                <div class="bg-slate-50 p-3 rounded-xl cursor-pointer hover:ring-2 hover:ring-blue-400 transition chart-tile" data-chart-type="line">
+                    <h3 class="text-xs font-semibold text-gray-600 mb-2">Line Chart</h3>
+                    <div class="h-36">
+                        <canvas id="lineChart" class="rounded-lg"></canvas>
+                    </div>
+                </div>
+                
+                <!-- Pie Chart -->
+                <div class="bg-slate-50 p-3 rounded-xl cursor-pointer hover:ring-2 hover:ring-blue-400 transition chart-tile" data-chart-type="pie">
+                    <h3 class="text-xs font-semibold text-gray-600 mb-2">Pie Chart</h3>
+                    <div class="h-36">
+                        <canvas id="pieChart" class="rounded-lg"></canvas>
+                    </div>
+                </div>
+                
+                <!-- Doughnut Chart -->
+                <div class="bg-slate-50 p-3 rounded-xl cursor-pointer hover:ring-2 hover:ring-blue-400 transition chart-tile" data-chart-type="doughnut">
+                    <h3 class="text-xs font-semibold text-gray-600 mb-2">Doughnut Chart</h3>
+                    <div class="h-36">
+                        <canvas id="doughnutChart" class="rounded-lg"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Download Section -->
+        <div class="section-card p-6">
+            <h2 class="text-xl font-semibold mb-4">Download Reports</h2>
+            <div class="flex gap-4">
+                <a href="/download_excel" data-loading="Preparing Excel download..."
+                    class="btn-analytics px-6 py-2 rounded-lg transition">
+                    Download Excel
+                </a>
+
+                <a href="/download_pdf" data-loading="Preparing PDF download..."
+                    class="btn-analytics px-6 py-2 rounded-lg transition">
+                    Download PDF
+                </a>
+            </div>
+        </div>
+
+        {% endif %}
+
+    </main>
+</div>
+
+<div id="loadingOverlay" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-50">
+    <div class="bg-white rounded-2xl shadow-xl p-6 min-w-[280px] text-center">
+        <div class="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto"></div>
+        <p id="loadingText" class="mt-4 text-gray-700 font-medium">Loading...</p>
+    </div>
+</div>
+
+<div id="chartModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50">
+    <div class="bg-white rounded-2xl shadow-xl p-6 w-[90vw] max-w-[900px] h-[80vh] flex flex-col">
+        <div class="flex items-center justify-between mb-4">
+            <h3 id="chartModalTitle" class="text-xl font-semibold">Chart View</h3>
+            <button id="closeChartModal" class="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-sm font-medium">Close</button>
+        </div>
+        <div class="flex-1 relative">
+            <canvas id="modalChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<div id="chartHistoryModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50">
+    <div class="bg-white rounded-2xl shadow-xl p-6 w-[90vw] max-w-[700px] max-h-[80vh] flex flex-col">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-xl font-semibold">Chart History</h3>
+            <button id="closeChartHistoryModal" class="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-sm font-medium">Close</button>
+        </div>
+        <p class="text-sm text-gray-500 mb-4">Select a previous chart session to view:</p>
+        <div id="chartHistoryList" class="flex-1 overflow-y-auto space-y-2">
+            <p class="text-gray-400 text-sm">Loading...</p>
+        </div>
+    </div>
+</div>
+
+</body>
+{% if labels and values %}
+<script>
+const barCtx = document.getElementById('barChart');
+const labels = JSON.parse(barCtx.dataset.labels || '[]');
+const values = JSON.parse(barCtx.dataset.values || '[]');
+
+// Color palette for charts
+const chartColors = [
+    'rgba(59, 130, 246, 0.8)',
+    'rgba(99, 102, 241, 0.8)',
+    'rgba(168, 85, 247, 0.8)',
+    'rgba(236, 72, 153, 0.8)',
+    'rgba(239, 68, 68, 0.8)',
+    'rgba(245, 158, 11, 0.8)',
+    'rgba(16, 185, 129, 0.8)',
+    'rgba(6, 182, 212, 0.8)'
+];
+
+const borderColors = chartColors.map(c => c.replace('0.8', '1'));
+
+// Bar Chart
+new Chart(barCtx, {
+    type: 'bar',
+    data: {
+        labels: labels,
+        datasets: [{
+            label: 'Revenue',
+            data: values,
+            backgroundColor: chartColors,
+            borderColor: borderColors,
+            borderWidth: 1
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { display: false }
+        }
+    }
+});
+
+// Line Chart
+const lineCtx = document.getElementById('lineChart');
+new Chart(lineCtx, {
+    type: 'line',
+    data: {
+        labels: labels,
+        datasets: [{
+            label: 'Revenue Trend',
+            data: values,
+            borderColor: 'rgba(59, 130, 246, 1)',
+            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+            fill: true,
+            tension: 0.4,
+            pointBackgroundColor: 'rgba(59, 130, 246, 1)',
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2,
+            pointRadius: 5
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { display: false }
+        }
+    }
+});
+
+// Pie Chart
+const pieCtx = document.getElementById('pieChart');
+new Chart(pieCtx, {
+    type: 'pie',
+    data: {
+        labels: labels,
+        datasets: [{
+            data: values,
+            backgroundColor: chartColors,
+            borderColor: '#fff',
+            borderWidth: 2
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { display: false }
+        }
+    }
+});
+
+// Doughnut Chart
+const doughnutCtx = document.getElementById('doughnutChart');
+new Chart(doughnutCtx, {
+    type: 'doughnut',
+    data: {
+        labels: labels,
+        datasets: [{
+            data: values,
+            backgroundColor: chartColors,
+            borderColor: '#fff',
+            borderWidth: 2
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '60%',
+        plugins: {
+            legend: { display: false }
+        }
+    }
+});
+
+// Chart Modal Functionality
+const chartModal = document.getElementById('chartModal');
+const chartModalTitle = document.getElementById('chartModalTitle');
+const closeChartModal = document.getElementById('closeChartModal');
+const modalChartCanvas = document.getElementById('modalChart');
+let modalChartInstance = null;
+
+const chartTitles = {
+    bar: 'Bar Chart - Revenue by Category',
+    line: 'Line Chart - Revenue Trend',
+    pie: 'Pie Chart - Revenue Distribution',
+    doughnut: 'Doughnut Chart - Revenue Breakdown'
+};
+
+function openChartModal(chartType) {
+    chartModalTitle.textContent = chartTitles[chartType] || 'Chart View';
+    chartModal.classList.remove('hidden');
+    chartModal.classList.add('flex');
+
+    // Destroy existing modal chart if any
+    if (modalChartInstance) {
+        modalChartInstance.destroy();
+    }
+
+    // Build chart config based on type
+    let config = {
+        type: chartType,
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Revenue',
+                data: values,
+                backgroundColor: chartColors,
+                borderColor: chartType === 'line' ? 'rgba(59, 130, 246, 1)' : borderColors,
+                borderWidth: chartType === 'line' ? 3 : 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: chartType === 'pie' || chartType === 'doughnut',
+                    position: 'right',
+                    labels: { boxWidth: 14, padding: 12, font: { size: 12 } }
+                }
+            }
+        }
+    };
+
+    // Line chart specific options
+    if (chartType === 'line') {
+        config.data.datasets[0].fill = true;
+        config.data.datasets[0].backgroundColor = 'rgba(59, 130, 246, 0.1)';
+        config.data.datasets[0].tension = 0.4;
+        config.data.datasets[0].pointBackgroundColor = 'rgba(59, 130, 246, 1)';
+        config.data.datasets[0].pointBorderColor = '#fff';
+        config.data.datasets[0].pointBorderWidth = 2;
+        config.data.datasets[0].pointRadius = 6;
+    }
+
+    // Doughnut specific options
+    if (chartType === 'doughnut') {
+        config.options.cutout = '55%';
+    }
+
+    // Pie/Doughnut datasets adjustment
+    if (chartType === 'pie' || chartType === 'doughnut') {
+        config.data.datasets[0].borderColor = '#fff';
+        config.data.datasets[0].borderWidth = 2;
+    }
+
+    modalChartInstance = new Chart(modalChartCanvas, config);
+}
+
+function closeChartModalFn() {
+    chartModal.classList.add('hidden');
+    chartModal.classList.remove('flex');
+    if (modalChartInstance) {
+        modalChartInstance.destroy();
+        modalChartInstance = null;
+    }
+}
+
+document.querySelectorAll('.chart-tile').forEach(tile => {
+    tile.addEventListener('click', () => {
+        const chartType = tile.dataset.chartType;
+        openChartModal(chartType);
+    });
+});
+
+closeChartModal.addEventListener('click', closeChartModalFn);
+
+chartModal.addEventListener('click', (e) => {
+    if (e.target === chartModal) {
+        closeChartModalFn();
+    }
+});
+</script>
+{% endif %}
+<script>
+const loadingOverlay = document.getElementById('loadingOverlay');
+const loadingText = document.getElementById('loadingText');
+
+function showLoading(message) {
+    if (!loadingOverlay || !loadingText) {
+        return;
+    }
+    loadingText.textContent = message || 'Loading...';
+    loadingOverlay.classList.remove('hidden');
+    loadingOverlay.classList.add('flex');
+}
+
+document.querySelectorAll('form').forEach((form) => {
+    form.addEventListener('submit', () => {
+        showLoading(form.dataset.loadingText || 'Loading...');
+    });
+});
+
+document.querySelectorAll('a[data-loading]').forEach((link) => {
+    link.addEventListener('click', () => {
+        showLoading(link.dataset.loading || 'Loading...');
+    });
+});
+
+// Chart History Functionality
+const chartHistoryModal = document.getElementById('chartHistoryModal');
+const chartHistoryList = document.getElementById('chartHistoryList');
+const loadChartHistoryBtn = document.getElementById('loadChartHistoryBtn');
+const closeChartHistoryModal = document.getElementById('closeChartHistoryModal');
+
+function openChartHistoryModal() {
+    chartHistoryModal.classList.remove('hidden');
+    chartHistoryModal.classList.add('flex');
+    loadChartHistory();
+}
+
+function closeChartHistoryModalFn() {
+    chartHistoryModal.classList.add('hidden');
+    chartHistoryModal.classList.remove('flex');
+}
+
+async function loadChartHistory() {
+    chartHistoryList.innerHTML = '<p class="text-gray-400 text-sm">Loading...</p>';
+    
+    try {
+        const response = await fetch('/api/chart_history');
+        const history = await response.json();
+        
+        if (!history || history.length === 0) {
+            chartHistoryList.innerHTML = '<p class="text-gray-500 text-sm">No saved charts yet. Process a CSV file to create chart history.</p>';
+            return;
+        }
+        
+        chartHistoryList.innerHTML = '';
+        history.forEach(entry => {
+            const date = new Date(entry.timestamp);
+            const formattedDate = date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            
+            const item = document.createElement('button');
+            item.type = 'button';
+            item.className = 'w-full text-left p-4 bg-slate-50 rounded-xl hover:bg-slate-100 transition border border-slate-200';
+            item.innerHTML = `
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="font-semibold text-gray-800">${entry.product}</p>
+                        <p class="text-sm text-gray-500">${formattedDate} • ${entry.time_mode} mode</p>
+                    </div>
+                    <span class="text-lg font-bold text-green-600">₹${Number(entry.revenue).toLocaleString()}</span>
+                </div>
+            `;
+            item.addEventListener('click', () => loadHistoricChart(entry.id));
+            chartHistoryList.appendChild(item);
+        });
+    } catch (error) {
+        chartHistoryList.innerHTML = '<p class="text-red-500 text-sm">Failed to load chart history.</p>';
+    }
+}
+
+async function loadHistoricChart(chartId) {
+    showLoading('Loading chart data...');
+    closeChartHistoryModalFn();
+    
+    try {
+        const response = await fetch(`/api/chart_history/${chartId}`);
+        const data = await response.json();
+        
+        if (data.error) {
+            alert('Chart not found');
+            return;
+        }
+        
+        // Store loaded data for chart rendering
+        window.loadedChartData = {
+            labels: data.labels,
+            values: data.values,
+            revenue: data.revenue,
+            product: data.product,
+            time_mode: data.time_mode
+        };
+        
+        // Redirect to dashboard with loaded data flag
+        window.location.href = '/?loaded_chart=' + chartId;
+        
+    } catch (error) {
+        alert('Failed to load chart');
+    } finally {
+        loadingOverlay.classList.add('hidden');
+        loadingOverlay.classList.remove('flex');
+    }
+}
+
+if (loadChartHistoryBtn) {
+    loadChartHistoryBtn.addEventListener('click', openChartHistoryModal);
+}
+
+if (closeChartHistoryModal) {
+    closeChartHistoryModal.addEventListener('click', closeChartHistoryModalFn);
+}
+
+if (chartHistoryModal) {
+    chartHistoryModal.addEventListener('click', (e) => {
+        if (e.target === chartHistoryModal) {
+            closeChartHistoryModalFn();
+        }
+    });
+}
+</script>
+<script src="{{ url_for('static', filename='interactive-bg.js') }}"></script>
+</html>

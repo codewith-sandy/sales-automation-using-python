@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Analytics - Sales Automation SaaS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body class="bg-gray-100">
+<div class="interactive-bg">
+    <div class="blob one"></div>
+    <div class="blob two"></div>
+    <div class="blob three"></div>
+    <div class="cursor-glow"></div>
+</div>
+
+<div class="flex h-screen page-shell">
+
+    <aside class="w-64 sidebar-glass">
+        <div class="p-6 text-2xl font-bold border-b brand-badge">
+            🚀 AutoSales
+        </div>
+
+        <nav class="p-4 space-y-2">
+            <a href="/" data-loading="Loading dashboard..." class="nav-link">Dashboard</a>
+            <a href="/reports" data-loading="Loading reports..." class="nav-link">Reports</a>
+            <a href="/analytics" data-loading="Loading analytics..." class="nav-link nav-link-active">Analytics</a>
+            <a href="/settings" data-loading="Loading settings..." class="nav-link">Settings</a>
+            <a href="/admin" data-loading="Loading admin page..." class="nav-link">Admin</a>
+        </nav>
+    </aside>
+
+    <main class="flex-1 p-8 overflow-y-auto">
+        <div class="flex justify-between items-center mb-8 topbar-glass rounded-2xl px-5 py-4">
+            <h1 class="text-3xl font-bold">Analytics</h1>
+            <a href="/" data-loading="Loading dashboard..." class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">Back to Dashboard</a>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div class="metric-card p-6">
+                <p class="metric-label">Total Reports</p>
+                <h3 class="metric-value">{{ total_reports }}</h3>
+            </div>
+            <div class="metric-card p-6">
+                <p class="metric-label">Excel Reports</p>
+                <h3 class="metric-value">{{ excel_reports }}</h3>
+            </div>
+            <div class="metric-card p-6">
+                <p class="metric-label">PDF Reports</p>
+                <h3 class="metric-value">{{ pdf_reports }}</h3>
+            </div>
+            <div class="metric-card p-6">
+                <p class="metric-label">Storage Used</p>
+                <h3 class="metric-value">{{ total_size_kb }} KB</h3>
+            </div>
+        </div>
+
+        {% if latest_excel_kpis %}
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="metric-card p-6">
+                <p class="metric-label">Latest Excel Rows</p>
+                <h3 class="metric-value">{{ latest_excel_kpis.rows }}</h3>
+            </div>
+            <div class="metric-card p-6">
+                <p class="metric-label">Latest Total Revenue</p>
+                <h3 class="metric-value">₹{{ '%.2f'|format(latest_excel_kpis.total_revenue) }}</h3>
+            </div>
+            <div class="metric-card p-6">
+                <p class="metric-label">Top Product</p>
+                <h3 class="metric-value">{{ latest_excel_kpis.top_product }}</h3>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="section-card p-6">
+            <h2 class="text-xl font-semibold mb-4">Recent Report Activity</h2>
+
+            {% if reports and reports|length > 0 %}
+            <div class="table-shell">
+                <table class="min-w-full">
+                    <thead class="table-head">
+                        <tr>
+                            <th class="text-left px-4 py-3">File Name</th>
+                            <th class="text-left px-4 py-3">Type</th>
+                            <th class="text-left px-4 py-3">Size (KB)</th>
+                            <th class="text-left px-4 py-3">Updated</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for report in reports[:10] %}
+                        <tr class="table-row border-b border-gray-100">
+                            <td class="px-4 py-3">{{ report.name }}</td>
+                            <td class="px-4 py-3"><span class="analysis-chip">{{ report.type }}</span></td>
+                            <td class="px-4 py-3">{{ report.size_kb }}</td>
+                            <td class="px-4 py-3">{{ report.updated_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-gray-600">No reports available yet. Generate reports from the dashboard to see analytics.</p>
+            {% endif %}
+        </div>
+    </main>
+</div>
+
+<div id="loadingOverlay" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-50">
+    <div class="bg-white rounded-2xl shadow-xl p-6 min-w-[280px] text-center">
+        <div class="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto"></div>
+        <p id="loadingText" class="mt-4 text-gray-700 font-medium">Loading...</p>
+    </div>
+</div>
+</body>
+<script src="{{ url_for('static', filename='interactive-bg.js') }}"></script>
+<script>
+const loadingOverlay = document.getElementById('loadingOverlay');
+const loadingText = document.getElementById('loadingText');
+
+function showLoading(message) {
+    if (!loadingOverlay || !loadingText) {
+        return;
+    }
+    loadingText.textContent = message || 'Loading...';
+    loadingOverlay.classList.remove('hidden');
+    loadingOverlay.classList.add('flex');
+}
+
+document.querySelectorAll('a[data-loading]').forEach((link) => {
+    link.addEventListener('click', () => {
+        showLoading(link.dataset.loading || 'Loading...');
+    });
+});
+</script>
+</html>
